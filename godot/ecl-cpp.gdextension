@@ -1,0 +1,15 @@
+[configuration]
+
+entry_symbol = "ecl_cpp_init"
+compatibility_minimum = "4.1"
+
+[libraries]
+
+# macos.debug = "res://..//lisp-extension//libeclcpp.macos.debug.framework"
+# macos.release = "res://..//lisp-extension//libeclcpp.macos.release.framework"
+# windows.debug.x86_64 = "res://..//lisp-extension//libeclcpp.windows.debug.x86_64.dll"
+windows.debug.x86_64 = "res://..//lisp-extension//libeclcpp.dll"
+# windows.release.x86_64 = "res://..//lisp-extension//libeclcpp.windows.release.x86_64.dll"
+# linux.debug.x86_64 = "res://..//lisp-extension//libeclcpp.linux.debug.x86_64.so"
+# linux.release.x86_64 = "res://..//lisp-extension//libeclcpp.linux.release.x86_64.so"
+# Repeat for other architectures to support arm64, rv64, etc.
