@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://brmywo4y5ha8a"]
+
+[ext_resource type="Script" path="res://main.gd" id="1_mdiuw"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_eeyas"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_t8kol"]
+
+[node name="main" type="LispSingleton"]
+script = ExtResource("1_mdiuw")
+
+[node name="cam" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.716704)
+
+[node name="RigidBody3D2" type="RigidBody3D" parent="cam"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.39205)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cam/RigidBody3D2"]
+shape = SubResource("BoxShape3D_eeyas")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="cam/RigidBody3D2"]
+mesh = SubResource("BoxMesh_t8kol")

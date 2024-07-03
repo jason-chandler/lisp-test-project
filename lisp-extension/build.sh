@@ -1,0 +1,1 @@
+g++ -std=c++17 -L. -Wl,-rpath,. -shared libeclcpp.cpp lisp_singleton.cpp -g -fPIC -I. -isystem ~/godot-cpp/include -isystem ~/godot-cpp/gen/include -isystem ~/godot-cpp/gdextension -isystem ~/ecl-24.5.10/build -fpermissive -lecl libgodot-cpp.linux.template_debug.dev.x86_64.a -o libeclcpp.linux.debug.x86_64.so

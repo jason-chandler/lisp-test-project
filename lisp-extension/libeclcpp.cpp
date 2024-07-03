@@ -21,8 +21,7 @@ void initialize_ecl_module(ModuleInitializationLevel p_level) {
         return;
     }
 
-	//GDREGISTER_CLASS(LispSingleton);
-	ClassDB::register_class<LispSingleton>();
+	GDREGISTER_CLASS(LispSingleton);
 }
 void uninitialize_ecl_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {

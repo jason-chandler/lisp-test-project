@@ -1,0 +1,5 @@
+clang++
+-I.
+-I/home/jason/godot-cpp/include
+-I/home/jason/godot-cpp/gen/include
+-std=c++17
