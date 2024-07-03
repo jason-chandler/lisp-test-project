@@ -29,6 +29,17 @@
                  @(return)=name;"))
 
 
-(get-node->symbol "cam" camera)
-(get-name camera)
+(defun set-name (ptr name)
+  (ffi:clines "#include <godot_cpp/classes/object.hpp>")
+  (ffi:clines "#include <godot_cpp/classes/node.hpp>")
+  (ffi:clines "using namespace godot;")
+   (ffi:c-inline (ptr name) (:pointer-void :cstring) :void
+                "
+                 Node* node = Object::cast_to<Node>(reinterpret_cast<Object*>(#0));
+                 node->call_deferred(\"set_name\", String(#1));"))
+
+(get-node-symbol "cam" camera)
+(get-node->symbol "cam/RigidBody3D2" rigid-body)
+(set-name rigid-body "the rigid body")
+(get-name rigid-body)
 (princ camera)
