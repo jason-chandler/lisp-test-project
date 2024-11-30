@@ -12,11 +12,11 @@ script = ExtResource("1_mdiuw")
 [node name="cam" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.716704)
 
-[node name="RigidBody3D2" type="RigidBody3D" parent="cam"]
+[node name="char" type="CharacterBody3D" parent="cam"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.39205)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="cam/RigidBody3D2"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cam/char"]
 shape = SubResource("BoxShape3D_eeyas")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="cam/RigidBody3D2"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="cam/char"]
 mesh = SubResource("BoxMesh_t8kol")

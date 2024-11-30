@@ -4,9 +4,13 @@
 
 ;; (ql:quickload :slynk)
 
-(setq C:*USER-CC-FLAGS* " -std=c++17 -fpermissive -I/home/jason/godot-projects/lisp-test-project/lisp-extension -isystem /home/jason/godot-cpp/include -isystem /home/jason/godot-cpp/gen/include -isystem /home/jason/godot-cpp/gdextension ")
-(setq C:*user-linker-libs* "-L/home/jason/godot-projects/lisp-test-project/lisp-extension -Wl,-rpath,/home/jason/godot-projects/lisp-test-project/lisp-extension  -leclcpp.linux.debug.x86_64 /home/jason/godot-projects/lisp-test-project/lisp-extension/libgodot-cpp.linux.template_debug.dev.x86_64.a")
+;; (setq C:*USER-CC-FLAGS* " -std=c++17 -fpermissive -I/home/jason/godot-projects/lisp-test-project/lisp-extension -isystem /home/jason/godot-cpp/include -isystem /home/jason/godot-cpp/gen/include -isystem /home/jason/godot-cpp/gdextension ")
+;; (setq C:*user-linker-libs* "-L/home/jason/godot-projects/lisp-test-project/lisp-extension -Wl,-rpath,/home/jason/godot-projects/lisp-test-project/lisp-extension  -leclcpp.linux.debug.x86_64 /home/jason/godot-projects/lisp-test-project/lisp-extension/libgodot-cpp.linux.template_debug.dev.x86_64.a")
 
+
+(setq C:*user-linker-libs* "-L/home/jason/godot-projects/lisp-test-project/src -L/home/jason/godot-projects/lisp-scons-test-project/bin/linux -Wl,-rpath,/home/jason/godot-projects/lisp-scons-test-project/bin/linux  -lecl-cpp.linux.template_debug.x86_64 /home/jason/godot-projects/lisp-scons-test-project/godot-cpp/bin/libgodot-cpp.linux.template_debug.dev.x86_64.a")
+libecl-cpp.linux.template_debug.x86_64.so
+ecl-cpp.linux.debug.x86_64
 ;;(setq C::*cc-flags* " -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -g -O2 -fPIC -D_THREAD_SAFE  -Dlinux ")
 ;;(setq C::*cc-flags* " -g -fPIC ")
 
@@ -15,6 +19,56 @@
   (ffi:c-inline () () :void "std::cout << \"hello, buns!\" << std::endl;" :one-liner t))
 
 (test-godot)
+
+(defparameter *singleton* nil)
+
+(defun initialize-godot-symbols ()
+  (labels ((fetch-singleton ()
+             (ffi:clines "#include \"lisp_singleton.hpp\"")
+             (ffi:clines "using namespace godot;")
+             (ffi:c-inline () () :pointer-void "@(return)=LispSingleton::singleton;")))
+  (setq *singleton* (fetch-singleton))))
+
+(initialize-godot-symbols)
+
+(defun get-name (obj)
+  (ffi:clines "#include \"lisp_singleton.hpp\"")
+  (ffi:clines "using namespace godot;")
+  (ffi:c-inline (obj) (:pointer-void) :cstring
+                "String c = ((Node*)(#0))->get_name();
+                 (@(return) = c.utf8().ptr());"))
+
+(get-name *singleton*)
+
+(defparameter **)
+
+
+(defun inp (event)
+  (ffi:clines "#include <"))
+(setf *input* (list (lambda (event) (princ event))))
+
+
+(defun defer-to-pointer (obj fun-name)
+  (ffi:clines "#include \"lisp_singleton.hpp\"")
+  (ffi:clines "using namespace godot;")
+  (let ((ptr (ffi:c-inline (obj fun-name) (:pointer-void :cstring) :pointer-void
+                "Object* o;
+                 Callable c = Callable(#0, #1);
+                 LispSingleton::singleton->call_deferred(\"assign_to_pointer\", c, o);
+                 (@(return) = (void*)(&(*o));")))
+  (loop :for i :from 0 :until (not (eql (ffi:pointer-address ptr) (ffi:pointer-address (ffi:make-null-pointer :void)))))
+  ptr))
+
+(defer-to-pointer *singleton* "get_name")
+
+(defun get-node (name)
+  )
+
+
+
+
+
+
 
 (defun check-for-child (name)
   (ffi:clines "#include \"lisp_singleton.hpp\"")
@@ -83,7 +137,7 @@ GODOT::CAMERA
   (ffi:clines "#include \"lisp_singleton.hpp\"")
   (ffi:c-inline (name) (:cstring) :void
                 "cl_env_ptr env = ecl_process_env();
-                 void* ptr = &godot::LispSingleton::self->get_name();
+                 void* ptr = &godot::LispSingleton::singleton->get_name();
                  ecl_setq(env, ecl_make_symbol(#0, \"GODOT\"), (intptr_t)ptr);"
                 ))
 

@@ -13,11 +13,15 @@ void LispSingleton::_bind_methods() {
     ClassDB::bind_method(D_METHOD("shut_down_lisp"), &LispSingleton::shut_down_lisp);
     ClassDB::bind_method(D_METHOD("is_initialized"), &LispSingleton::is_initialized);
     ClassDB::bind_method(D_METHOD("lisp"), &LispSingleton::lisp);
-    ClassDB::bind_method(D_METHOD("run_slynk"), &LispSingleton::run_slynk);
+    ClassDB::bind_method(D_METHOD("run_swank"), &LispSingleton::run_swank);
     ClassDB::bind_method(D_METHOD("call_to_symbol", "symbol_name", "obj", "method_name", "args"), &LispSingleton::call_to_symbol);
     ClassDB::bind_method(D_METHOD("get_keep_alive"), &LispSingleton::get_keep_alive);
     ClassDB::bind_method(D_METHOD("set_keep_alive", "arr"), &LispSingleton::set_keep_alive);
     ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "keep_alive"), "set_keep_alive", "get_keep_alive");
+}
+
+void* get_singleton() {
+    return (void*) LispSingleton::singleton;
 }
 
 Array LispSingleton::get_keep_alive() const {
@@ -26,6 +30,24 @@ Array LispSingleton::get_keep_alive() const {
 
 void LispSingleton::set_keep_alive(const Array &arr) {
 	this->keep_alive = arr;
+}
+
+void LispSingleton::assign_to_pointer(Callable c, void* ptr) {
+    ptr = (void*)c.call();
+}
+
+//void test() {
+    //LispSingleton l;
+    //const InputEventKey *key_event;
+    //key_event->is_pressed()
+//}
+
+void LispSingleton::_input(const Ref<InputEvent> &event) {
+    const InputEventKey *key_event = Object::cast_to<const InputEventKey>(*event);
+    if (key_event) {
+      cl_funcall(2, cl_symbol_function(ecl_make_symbol("INPUT", "GODOT")),
+                 key_event);
+    }
 }
 
 // Define a function to run arbitrary Lisp expressions
@@ -61,29 +83,18 @@ void LispSingleton::call_to_symbol(godot::String symbol_name, Variant var, godot
 	send_object_to_symbol(symbol_name, &(*obj));
 }
 
-Object* LispSingleton::pointer_from_symbol(const char * symbol_name) {
-	cl_object sym = ecl_make_symbol(symbol_name, "GODOT");
-	cl_object sym_value = cl_symbol_value(sym);
-	uintptr_t uintptr = ecl_to_unsigned_integer(sym_value);
-	Object* result = reinterpret_cast<Object*>(uintptr);
-	return result;
-}
-
 void* LispSingleton::call_deferred_to_symbol(godot::String symbol_name, Variant obj, godot::String method_name, const Array & arg_array) {
     cl_object sym = ecl_make_symbol(symbol_name.utf8(), "GODOT");
     cl_set(sym, Cnil);
     this->call_deferred("call_to_symbol", symbol_name, obj, method_name, arg_array);
     cl_object lisp_result = cl_symbol_value(sym);
-    std::cout << (lisp_result == Cnil) << std::endl;
     while(lisp_result == Cnil) {
         lisp_result = cl_symbol_value(sym);
     }
-    std::cout << lisp_result << std::endl;
-    std::cout << (uintptr_t)lisp_result << std::endl;
     return lisp_result;
 }
 
-void LispSingleton::run_slynk() {
+void LispSingleton::run_swank() {
     int booted = (int)ecl_get_option(ECL_OPT_BOOTED);
     if(booted == 1) {
         const cl_env_ptr l_env = ecl_process_env();
@@ -91,7 +102,7 @@ void LispSingleton::run_slynk() {
 
         CL_CATCH_ALL_BEGIN(l_env) {
             CL_UNWIND_PROTECT_BEGIN(l_env) {
-                std::cout << "\nStarting Slynk.\n";
+                std::cout << "\nStarting Swank.\n";
 
                 // set up the in/out filestream:
                 ecl_setq(ecl_process_env(),
@@ -108,37 +119,37 @@ void LispSingleton::run_slynk() {
 
 
                 si_safe_eval(3, ecl_read_from_cstring("(require :cmp)"), (cl_object)l_env, ecl_make_fixnum(1));
-                si_safe_eval(3, ecl_read_from_cstring("(setq C:*USER-CC-FLAGS* \" -std=c++17 -fpermissive -I/home/jason/godot-projects/lisp-test-project/lisp-extension -isystem /home/jason/godot-cpp/include -isystem /home/jason/godot-cpp/gen/include -isystem /home/jason/godot-cpp/gdextension \")"),
+                si_safe_eval(3, ecl_read_from_cstring("(setq C:*USER-CC-FLAGS* \" -std=c++17 -fPIC -O0 -fpermissive -I/home/jason/godot-projects/lisp-test-project/lisp-extension -isystem /home/jason/godot-cpp/include -isystem /home/jason/godot-cpp/gen/include -isystem /home/jason/godot-cpp/gdextension \")"),
                                                       (cl_object)l_env,
                                                       ecl_make_fixnum(1));
-                si_safe_eval(3, ecl_read_from_cstring("(setq C:*user-linker-libs* \"-L/home/jason/godot-projects/lisp-test-project/lisp-extension -Wl,-rpath,/home/jason/godot-projects/lisp-test-project/lisp-extension  -leclcpp.linux.debug.x86_64 /home/jason/godot-projects/lisp-test-project/lisp-extension/libgodot-cpp.linux.template_debug.dev.x86_64.a\")"),
+                si_safe_eval(3, ecl_read_from_cstring("(setq C:*user-linker-libs* \"-L/home/jason/godot-projects/lisp-test-project/lisp-extension -Wl,-rpath,/home/jason/godot-projects/lisp-test-project/lisp-extension  -leclcpp.linux.debug.x86_64 /home/jason/godot-projects/lisp-test-project/lisp-extension/libgodot-cpp.linux.debug.64.a\")"),
                                                       (cl_object)l_env,
                                                       ecl_make_fixnum(1));
                 si_safe_eval(3, ecl_read_from_cstring("(require :ecl-quicklisp)"), (cl_object)l_env, ecl_make_fixnum(1));
-                si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :slynk)"), (cl_object)l_env, ecl_make_fixnum(1));
+                si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :swank)"), (cl_object)l_env, ecl_make_fixnum(1));
 
-                si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :slynk-quicklisp)"), (cl_object)l_env, ecl_make_fixnum(1));
-                si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :slynk-macrostep)"), (cl_object)l_env, ecl_make_fixnum(1));
-                si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :slynk-asdf)"), (cl_object)l_env, ecl_make_fixnum(1));
-                si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :slynk-indentation)"), (cl_object)l_env, ecl_make_fixnum(1));
-                si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :slynk-stickers)"), (cl_object)l_env, ecl_make_fixnum(1));
-                si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :slynk-trace-dialog)"), (cl_object)l_env, ecl_make_fixnum(1));
-                si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :slynk-stepper)"), (cl_object)l_env, ecl_make_fixnum(1));
-                si_safe_eval(3, ecl_read_from_cstring("(slynk:create-server)"), (cl_object)l_env, ecl_make_fixnum(1));
+                // si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :swank-quicklisp)"), (cl_object)l_env, ecl_make_fixnum(1));
+                // si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :swank-macrostep)"), (cl_object)l_env, ecl_make_fixnum(1));
+                // si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :swank-asdf)"), (cl_object)l_env, ecl_make_fixnum(1));
+                // si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :swank-indentation)"), (cl_object)l_env, ecl_make_fixnum(1));
+                // si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :swank-stickers)"), (cl_object)l_env, ecl_make_fixnum(1));
+                // si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :swank-trace-dialog)"), (cl_object)l_env, ecl_make_fixnum(1));
+                // si_safe_eval(3, ecl_read_from_cstring("(ql:quickload :swank-stepper)"), (cl_object)l_env, ecl_make_fixnum(1));
+                si_safe_eval(3, ecl_read_from_cstring("(swank:create-server)"), (cl_object)l_env, ecl_make_fixnum(1));
 
-                std::cout << "\nSlynk has been started.\n";
+                std::cout << "\nSwank has been started.\n";
             }
             CL_UNWIND_PROTECT_EXIT {}
             CL_UNWIND_PROTECT_END;
         }
         CL_CATCH_ALL_END;
     } else {
-        std::cout << "\nCannot start Slynk: Lisp is not booted.\n";
+        std::cout << "\nCannot start Swank: Lisp is not booted.\n";
     }
 }
 
-void LispSingleton::defer_slynk() {
-    call_deferred("run_slynk");
+void LispSingleton::defer_swank() {
+    call_deferred("run_swank");
 }
 
 static const char* _argv_[] = {"GODOT"};
@@ -161,6 +172,9 @@ void LispSingleton::initialize_lisp() {
         std::cout << "\nlisp-booted-p => " << lisp_booted_p << std::endl;
         this->lisp("(defpackage :godot (:use :cl))");
         this->lisp("(in-package :godot)");
+
+        this->lisp("(defparameter *input-handlers* nil)");
+        this->lisp("(defun input (event) (loop :for fun :in *input-handlers* :do (funcall fun event)))");
     }
 }
 
